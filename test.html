@@ -10,6 +10,12 @@
 		ws.onopen=function(evt){
 			console.log('握手成功'+evt);
 		}
+		ws.onmessage=function(e){
+			console.log(e);
+		}
+		function send(){
+			ws.send('12');
+		}
 		ws.onerror=function(evt){
 			console.log('error'+evt);
 		}

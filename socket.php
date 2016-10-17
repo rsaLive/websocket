@@ -1,6 +1,5 @@
 <?php
 set_time_limit(0);
-set_time_limit(0);
 	class socket{
 		protected $hand;
 		public function  index()
@@ -40,12 +39,9 @@ set_time_limit(0);
 					     
 					        $new_key = base64_encode(sha1($key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
 
-							// $keys=preg_match("/Sec-WebSocket-Key:(.*)\r\n/",$buff);
-							// $key=$keys[1];
+							// preg_match("/Sec-WebSocket-Key:(.*)\r\n/",$match);
+							// $key=$match[1];
 							// $new_key=base64_encode(sha1($key.'258EAFA5-E914-47DA-95CA-C5AB0DC85B11'),true);
-							// preg_match("/Sec-WebSocket-Key: (.*)\r\n/", $req, $match);
-							// $key = $match[1]; 
-							// base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
 
 							$new_message = "HTTP/1.1 101 Switching Protocols\r\n";
 					        $new_message .= "Upgrade: websocket\r\n";
@@ -62,7 +58,29 @@ set_time_limit(0);
 					        $this->hand=true;
 						}else{
 							//处理数据操作
-							//$buff
+							//$buff  解析数据帧
+							// echo $buff;
+							$mask = array();  
+					        $data = '';  
+					        $msg = unpack('H*',$buff);  //用unpack函数从二进制将数据解码
+					        $head = substr($msg[1],0,2);  
+					        if (hexdec($head{1}) === 8) {  
+					            $data = false;  
+					        }else if (hexdec($head{1}) === 1){  
+					            $mask[] = hexdec(substr($msg[1],4,2));  
+					            $mask[] = hexdec(substr($msg[1],6,2));  
+					            $mask[] = hexdec(substr($msg[1],8,2));  
+					            $mask[] = hexdec(substr($msg[1],10,2));  
+					           	
+					            $s = 12;  
+					            $e = strlen($msg[1])-2;  
+					            $n = 0;  
+					            for ($i=$s; $i<= $e; $i+= 2) {  
+					                $data .= chr($mask[$n%4]^hexdec(substr($msg[1],$i,2)));  
+					                $n++;  
+					            }
+					            print_r($data);  
+					        }
 						}
 
 					}
