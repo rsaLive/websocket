@@ -31,7 +31,7 @@ set_time_limit(0);
 						if($byte==0)
 							return;
 						//判断有没有握手没有握手则进行握手,如果握手了 则进行处理
-						if(!$this->hand){
+						if(!$this->hand[(int)$client]){
 							//进行握手操作
 							//提取websocket传的key并进行加密
 							$buf  = substr($buff,strpos($buff,'Sec-WebSocket-Key:')+18);
@@ -55,7 +55,7 @@ set_time_limit(0);
 				          //      "\r\n";
 					        socket_write($v,$new_message,strlen($new_message));
 					        // socket_write(socket,$upgrade.chr(0), strlen($upgrade.chr(0)));
-					        $this->hand=true;
+					        $this->hand[(int)$client]=true;
 						}else{
 							//处理数据操作
 							//$buff  解析数据帧
@@ -71,7 +71,7 @@ set_time_limit(0);
 					            $mask[] = hexdec(substr($msg[1],6,2));  
 					            $mask[] = hexdec(substr($msg[1],8,2));  
 					            $mask[] = hexdec(substr($msg[1],10,2));  
-					           	
+					           	//遇到的问题  刚连接的时候就发送数据  显示 state connecting
 					            $s = 12;  
 					            $e = strlen($msg[1])-2;  
 					            $n = 0;  
@@ -79,10 +79,18 @@ set_time_limit(0);
 					                $data .= chr($mask[$n%4]^hexdec(substr($msg[1],$i,2)));  
 					                $n++;  
 					            }
-					            print_r($data);  
+
+					            //发送数据到客户端
+					           	//如果长度大于125 将数据分块
+					           	$block=str_split($data,125);
+					           	$writes ="\x81".chr(strlen($block[0])).$block[0];
+					           	socket_write($v,$writes,strlen($writes));
+					           	// foreach ($block as $keys => $values) {
+					           	// 	$data='\x81'.chr(strlen($values)).$values;
+					           	// 	socket_write($v,$data);
+					           	// }
 					        }
 						}
-
 					}
 				}
 			}
