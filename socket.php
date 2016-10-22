@@ -89,10 +89,17 @@
 					            //发送数据到客户端
 					           	//如果长度大于125 将数据分块
 					           	$block=str_split($data,125);
-					           	$writes ="\x81".chr(strlen($block[0])).$block[0];
-					           	foreach ($this->socs as $key => $value) {
-					           		if($this->hand[(int)$value])
-					           			socket_write($value,$writes,strlen($writes));
+					           	$mess=array(
+					           		'mess'=>$block[0],
+					           		);
+					           	// $writes ="\x81".chr(strlen($block[0])).$block[0];
+					           	foreach ($this->socs as $keys => $values) {
+					           		print_r('aaaaa=>'.$values);
+					           		$mess['name']="游客{$v}";
+					           		$str=json_encode($mess);
+					           		$writes ="\x81".chr(strlen($str)).$str;
+					           		// if($this->hand[(int)$values])
+					           			socket_write($values,$writes,strlen($writes));
 					           	}
 					        }
 						}

@@ -17,13 +17,14 @@
 </html>
 
 <script type="text/javascript">
-	var ws = new WebSocket("ws://127.0.0.1:8080");
+	var ws = new WebSocket("ws://127.0.0.1:8000");
 	ws.onopen = function(){
 		var data="系统消息：建立连接成功";
 		list(data);
 	}
 	ws.onmessage = function(e){
-		var data="服务器消息:" + e.data;
+		var obj=eval("("+e.data+")");
+		var data=obj.name+"消息:" + obj.mess;
 		list(data);
 	}
 	ws.onerror = function(){
@@ -34,9 +35,9 @@
 	{
 		var msg=document.getElementById("msg").value;
 		ws.send(msg);
-		var data="客户端消息："+msg;
-		list(data);
-		document.getElementById("msg").value='';
+		// var data="客户端消息："+msg;
+		// list(data);
+		// document.getElementById("msg").value='';
 	}
 	function list(data)
 	{
