@@ -12,7 +12,7 @@
 		public $socs;
 		public function  __construct($address,$port)
 		{
-			//å»ºç«‹å¥—æ¥å­—
+			//½¨Á¢Ì×½Ó×Ö
 			$this->soc=$this->createSocket($address,$port);
 			$this->socs=array($this->soc);
 
@@ -42,70 +42,95 @@
 							$this->socs[]=$client;
 						}
 					}else{
-						//ä»å·²è¿æ¥çš„socketæ¥æ”¶æ•°æ®  è¿”å›çš„æ˜¯ä»socketä¸­æ¥æ”¶çš„å­—èŠ‚æ•°
+						//´ÓÒÑÁ¬½ÓµÄsocket½ÓÊÕÊı¾İ  ·µ»ØµÄÊÇ´ÓsocketÖĞ½ÓÊÕµÄ×Ö½ÚÊı
 						$byte=socket_recv($v, $buff,20480, 0);
-						//å¦‚æœæ¥æ”¶çš„å­—èŠ‚æ˜¯0 è¿”å›
+						//Èç¹û½ÓÊÕµÄ×Ö½ÚÊÇ0 ·µ»Ø
 						if($byte<7)
 							continue;
-						//åˆ¤æ–­æœ‰æ²¡æœ‰æ¡æ‰‹æ²¡æœ‰æ¡æ‰‹åˆ™è¿›è¡Œæ¡æ‰‹,å¦‚æœæ¡æ‰‹äº† åˆ™è¿›è¡Œå¤„ç†
+						//ÅĞ¶ÏÓĞÃ»ÓĞÎÕÊÖÃ»ÓĞÎÕÊÖÔò½øĞĞÎÕÊÖ,Èç¹ûÎÕÊÖÁË Ôò½øĞĞ´¦Àí
 						if(!$this->hand[(int)$client]){
-							//è¿›è¡Œæ¡æ‰‹æ“ä½œ
-							//æå–websocketä¼ çš„keyå¹¶è¿›è¡ŒåŠ å¯†
-							$buf  = substr($buff,strpos($buff,'Sec-WebSocket-Key:')+18);
-					        $key  = trim(substr($buf,0,strpos($buf,"\r\n")));
-					     
-					        $new_key = base64_encode(sha1($key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
-							$new_message = "HTTP/1.1 101 Switching Protocols\r\n";
-					        $new_message .= "Upgrade: websocket\r\n";
-					        $new_message .= "Sec-WebSocket-Version: 13\r\n";
-					        $new_message .= "Connection: Upgrade\r\n";
-					        $new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
-					        socket_write($v,$new_message,strlen($new_message));
-					        // socket_write(socket,$upgrade.chr(0), strlen($upgrade.chr(0)));
-					        $this->hand[(int)$client]=true;
+							//½øĞĞÎÕÊÖ²Ù×÷
+							$this->hands($client,$buff,$v);
 						}else{
-							//å¤„ç†æ•°æ®æ“ä½œ
-							//$buff  è§£ææ•°æ®å¸§
-							// echo $buff;
-							$mask = array();  
-					        $data = '';  
-					        $msg = unpack('H*',$buff);  //ç”¨unpackå‡½æ•°ä»äºŒè¿›åˆ¶å°†æ•°æ®è§£ç 
-					        $head = substr($msg[1],0,2);  
-					        if (hexdec($head{1}) === 8) {  
-					            $data = false;  
-					        }else if (hexdec($head{1}) === 1){  
-					            $mask[] = hexdec(substr($msg[1],4,2));  
-					            $mask[] = hexdec(substr($msg[1],6,2));  
-					            $mask[] = hexdec(substr($msg[1],8,2));  
-					            $mask[] = hexdec(substr($msg[1],10,2));  
-					           	//é‡åˆ°çš„é—®é¢˜  åˆšè¿æ¥çš„æ—¶å€™å°±å‘é€æ•°æ®  æ˜¾ç¤º state connecting
-					            $s = 12;  
-					            $e = strlen($msg[1])-2;  
-					            $n = 0;  
-					            for ($i=$s; $i<= $e; $i+= 2) {  
-					                $data .= chr($mask[$n%4]^hexdec(substr($msg[1],$i,2)));  
-					                $n++;  
-					            }
-					            //å‘é€æ•°æ®åˆ°å®¢æˆ·ç«¯
-					           	//å¦‚æœé•¿åº¦å¤§äº125 å°†æ•°æ®åˆ†å—
-					           	$block=str_split($data,125);
-					           	$mess=array(
-					           		'mess'=>$block[0],
-					           		);
-					           	// $writes ="\x81".chr(strlen($block[0])).$block[0];
-					           	foreach ($this->socs as $keys => $values) {
-					           		print_r('aaaaa=>'.$values);
-					           		$mess['name']="æ¸¸å®¢{$v}";
-					           		$str=json_encode($mess);
-					           		$writes ="\x81".chr(strlen($str)).$str;
-					           		// if($this->hand[(int)$values])
-					           			socket_write($values,$writes,strlen($writes));
-					           	}
-					        }
+							//´¦ÀíÊı¾İ²Ù×÷
+							$mess=$this->decodeData($buff);
+					// $writes ="\x81".chr(strlen($block[0])).$block[0];
+						           	//·¢ËÍÊı¾İ
+							$this->send($mess,$v);
+							// foreach ($this->socs as $keys => $values) {
+				   //         		// $mess['name']="ÓÎ¿Í{$v}";
+				   //         		$mess['name']="Tourist{$v}";
+				   //         		$str=json_encode($mess);
+				   //         		$writes ="\x81".chr(strlen($str)).$str;
+				   //         		// if($this->hand[(int)$values])
+				   //         			socket_write($values,$writes,strlen($writes));
+				   //         	}
 						}
 					}
 				}
 			}
+		}
+		//½øĞĞÎÕÊÖ
+		public function hands($client,$buff,$v)
+		{
+			//ÌáÈ¡websocket´«µÄkey²¢½øĞĞ¼ÓÃÜ
+			$buf  = substr($buff,strpos($buff,'Sec-WebSocket-Key:')+18);
+	        $key  = trim(substr($buf,0,strpos($buf,"\r\n")));
+	     
+	        $new_key = base64_encode(sha1($key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
+			$new_message = "HTTP/1.1 101 Switching Protocols\r\n";
+	        $new_message .= "Upgrade: websocket\r\n";
+	        $new_message .= "Sec-WebSocket-Version: 13\r\n";
+	        $new_message .= "Connection: Upgrade\r\n";
+	        $new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
+	        socket_write($v,$new_message,strlen($new_message));
+	        // socket_write(socket,$upgrade.chr(0), strlen($upgrade.chr(0)));
+	        $this->hand[(int)$client]=true;
+		}
+
+		//½âÎöÊı¾İ
+		public  function  decodeData($buff)
+		{
+			//$buff  ½âÎöÊı¾İÖ¡
+			$mask = array();  
+	        $data = '';  
+	        $msg = unpack('H*',$buff);  //ÓÃunpackº¯Êı´Ó¶ş½øÖÆ½«Êı¾İ½âÂë
+	        $head = substr($msg[1],0,2);  
+	        if (hexdec($head{1}) === 8) {  
+	            $data = false;  
+	        }else if (hexdec($head{1}) === 1){  
+	            $mask[] = hexdec(substr($msg[1],4,2));  
+	            $mask[] = hexdec(substr($msg[1],6,2));  
+	            $mask[] = hexdec(substr($msg[1],8,2));  
+	            $mask[] = hexdec(substr($msg[1],10,2));  
+	           	//Óöµ½µÄÎÊÌâ  ¸ÕÁ¬½ÓµÄÊ±ºò¾Í·¢ËÍÊı¾İ  ÏÔÊ¾ state connecting
+	            $s = 12;  
+	            $e = strlen($msg[1])-2;  
+	            $n = 0;  
+	            for ($i=$s; $i<= $e; $i+= 2) {  
+	                $data .= chr($mask[$n%4]^hexdec(substr($msg[1],$i,2)));  
+	                $n++;  
+	            }
+	            //·¢ËÍÊı¾İµ½¿Í»§¶Ë
+	           	//Èç¹û³¤¶È´óÓÚ125 ½«Êı¾İ·Ö¿é
+	           	$block=str_split($data,125);
+	           	$mess=array(
+	           		'mess'=>$block[0],
+	           		);
+				return $mess;	           	
+	        }
+		}
+
+		//·¢ËÍÊı¾İ
+		public function send($mess,$v)
+		{
+			foreach ($this->socs as $keys => $values) {
+           		$mess['name']="Tourist's socket:{$v}";
+           		$str=json_encode($mess);
+           		$writes ="\x81".chr(strlen($str)).$str;
+           		// if($this->hand[(int)$values])
+           			socket_write($values,$writes,strlen($writes));
+           	}
 		}
 		
 	}
