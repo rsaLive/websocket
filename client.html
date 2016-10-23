@@ -19,8 +19,10 @@
 <script type="text/javascript">
 	var ws = new WebSocket("ws://127.0.0.1:8000");
 	ws.onopen = function(){
+		console.log('连接成功');
 		var data="系统消息：建立连接成功";
 		list(data);
+		ws.send('11');
 	}
 	ws.onmessage = function(e){
 		var obj=eval("("+e.data+")");
